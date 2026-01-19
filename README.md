@@ -1,8 +1,9 @@
 <div align="center">
-  <img src="assets/logo.png" alt="tinystate logo" width="125"/>
+  <img src="assets/logo.png" alt="tinystate logo" width="200"/>
   
   # tinystate
   <br />
+  
   [![Crates.io](https://img.shields.io/crates/v/tinystate.svg)](https://crates.io/crates/tinystate) [![Documentation](https://docs.rs/tinystate/badge.svg)](https://docs.rs/tinystate) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
   
 </div>
