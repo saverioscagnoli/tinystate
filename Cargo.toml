@@ -9,7 +9,7 @@ repository = "https://github.com/saverioscagnoli/tinystate"
 homepage = "https://github.com/saverioscagnoli/tinystate"
 license = "MIT"
 readme = "README.md"
-keywords = ["dfa", "fsm", "automata"]
+keywords = ["dfa", "fsm", "automata", "state-machine"]
 
 exclude = [".gitignore", "assets"]
 
