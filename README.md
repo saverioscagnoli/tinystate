@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="tinystate logo" width="200"/>
+  <img src="assets/logo.png" alt="tinystate logo" width="125"/>
   
   # tinystate
   
