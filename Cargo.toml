@@ -1,0 +1,28 @@
+[package]
+name = "tinystate"
+version = "0.1.0"
+edition = "2024"
+authors = ["Saverio Scagnoli <svscagn@gmail.com>"]
+description = "Fast and tiny finite state machine"
+documentation = "https://docs.rs/tinystate"
+repository = "https://github.com/saverioscagnoli/tinystate"
+homepage = "https://github.com/saverioscagnoli/tinystate"
+license = "MIT"
+readme = "README.md"
+keywords = ["dfa", "fsm", "automata"]
+
+exclude = [".gitignore", "assets"]
+
+[workspace]
+members = ["derive"]
+
+[dependencies]
+tinystate-derive = { path = "derive", optional = true }
+
+[dev-dependencies]
+tinystate = { path = ".", features = ["derive"] }
+
+[features]
+default = []
+costs = []
+derive = ["dep:tinystate-derive"]
