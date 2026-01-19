@@ -1,6 +1,6 @@
 [package]
 name = "tinystate"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Saverio Scagnoli <svscagn@gmail.com>"]
 description = "Fast and tiny finite state machine"
@@ -11,7 +11,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["dfa", "fsm", "automata", "state-machine"]
 
-exclude = [".gitignore", "assets"]
+exclude = [".gitignore", "assets", "CHANGELOG.md"]
 
 [workspace]
 members = ["derive"]
