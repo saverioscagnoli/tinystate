@@ -81,9 +81,11 @@ fn a_static_machine_is_fully_static() {
 fn an_action_makes_the_machine_dynamic() {
     let m = machine!(Light, Step)
         .initial(Light::Red)
-        .action(LightTag::Red, StepTag::Next, |_: &mut (), _: &Light, _: &Step| {
-            Some(Light::Green)
-        })
+        .action(
+            LightTag::Red,
+            StepTag::Next,
+            |_: &mut (), _: &Light, _: &Step| Some(Light::Green),
+        )
         .build()
         .unwrap();
 

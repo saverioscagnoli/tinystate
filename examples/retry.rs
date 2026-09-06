@@ -134,7 +134,12 @@ fn main() {
 
     for e in script {
         let out = req.trigger(e);
-        println!("{:<16} {:<13} {:?}", format!("{e:?}"), format!("{out:?}"), req.current());
+        println!(
+            "{:<16} {:<13} {:?}",
+            format!("{e:?}"),
+            format!("{out:?}"),
+            req.current()
+        );
     }
 
     if let Fetch::Done(code) = req.current() {
