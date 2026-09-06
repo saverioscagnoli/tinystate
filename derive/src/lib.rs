@@ -1,260 +1,142 @@
-//! Derive macros for `tinystate`.
-//!
-//! This crate provides procedural macros to automatically implement the [`States`] and [`Events`]
-//! traits for enum types, eliminating boilerplate code.
-//!
-//! # Usage
-//!
-//! Enable the `derive` feature in your `Cargo.toml`:
-//!
-//! ```toml
-//! [dependencies]
-//! tinystate = { version = "0.1", features = ["derive"] }
-//! ```
-//!
-//! Then derive the traits on your enums:
-//!
-//! ```rust,ignore
-//! use tinystate::{States, Events};
-//!
-//! #[derive(States)]
-//! enum TrafficLight {
-//!     Red,
-//!     Yellow,
-//!     Green,
-//! }
-//!
-//! #[derive(Events)]
-//! enum TrafficEvent {
-//!     Timer,
-//!     Emergency,
-//! }
-//! ```
-//!
-//! # Requirements
-//!
-//! - Both macros only work on enums with unit variants (no fields)
-//! - The first variant of a `States` enum becomes the default state
-//!
-//! [`States`]: https://docs.rs/tinystate/latest/tinystate/trait.States.html
-//! [`Events`]: https://docs.rs/tinystate/latest/tinystate/trait.Events.html
-
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::parse_macro_input;
 use syn::Data;
 use syn::DeriveInput;
 use syn::Fields;
+use syn::Ident;
+use syn::Result;
+use syn::parse_macro_input;
+use syn::parse_quote;
 
-/// Derives the `States` trait for an enum.
-///
-/// This macro automatically implements the `States` trait along with `Default`, `Copy`, and `Clone`.
-/// The first variant of the enum becomes the default state.
-///
-/// # Requirements
-///
-/// - Can only be derived for enums
-/// - All variants must be unit variants (no fields)
-///
-/// # Generated Implementations
-///
-/// - `States` - Maps variants to/from indices starting at 0
-/// - `Default` - Uses the first variant as the default
-/// - `Copy` and `Clone` - Enables efficient copying
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use tinystate::States;
-///
-/// #[derive(States)]
-/// enum DoorState {
-///     Closed,  // Index 0, also the default
-///     Open,    // Index 1
-///     Locked,  // Index 2
-/// }
-///
-/// let state = DoorState::default();
-/// assert_eq!(state.index(), 0);
-/// assert!(matches!(state, DoorState::Closed));
-/// ```
-///
-/// # Panics
-///
-/// The derive macro will panic at compile time if:
-/// - Applied to a struct or union (not an enum)
-/// - Any variant has fields (only unit variants are allowed)
-///
-/// The generated `from_index` method will panic at runtime if called with an invalid index.
-#[proc_macro_derive(States)]
-pub fn derive_states(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let name = &input.ident;
-
-    let variants = match &input.data {
-        Data::Enum(data_enum) => &data_enum.variants,
-        _ => panic!("States can only be derived for enums"),
-    };
-
-    // Check that all variants are unit variants (no fields)
-    for variant in variants {
-        if !matches!(variant.fields, Fields::Unit) {
-            panic!("States can only be derived for enums with unit variants (no fields)");
-        }
-    }
-
-    let variant_names: Vec<_> = variants.iter().map(|v| &v.ident).collect();
-
-    // Generate match arms for index()
-    let index_arms = variant_names.iter().enumerate().map(|(i, variant)| {
-        quote! {
-            #name::#variant => #i,
-        }
-    });
-
-    // Generate match arms for from_index()
-    let from_index_arms = variant_names.iter().enumerate().map(|(i, variant)| {
-        quote! {
-            #i => #name::#variant,
-        }
-    });
-
-    // Get the first variant for Default implementation
-    let first_variant = &variant_names[0];
-
-    let expanded = quote! {
-        impl States for #name {
-            fn index(&self) -> usize {
-                match self {
-                    #(#index_arms)*
-                }
-            }
-
-            fn from_index(index: usize) -> Self {
-                match index {
-                    #(#from_index_arms)*
-                    _ => panic!("Invalid index {} for {}", index, stringify!(#name)),
-                }
-            }
-        }
-
-        impl Default for #name {
-            fn default() -> Self {
-                #name::#first_variant
-            }
-        }
-
-        impl Copy for #name {}
-
-        impl Clone for #name {
-            fn clone(&self) -> Self {
-                *self
-            }
-        }
-    };
-
-    TokenStream::from(expanded)
+#[derive(Clone, Copy)]
+enum Kind {
+    States,
+    Events,
 }
 
-/// Derives the `Events` trait for an enum.
-///
-/// This macro automatically implements the `Events` trait along with `Copy` and `Clone`.
-/// Unlike `States`, this does not generate a `Default` implementation.
-///
-/// # Requirements
-///
-/// - Can only be derived for enums
-/// - All variants must be unit variants (no fields)
-///
-/// # Generated Implementations
-///
-/// - `Events` - Maps variants to/from indices starting at 0
-/// - `Copy` and `Clone` - Enables efficient copying
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use tinystate::Events;
-///
-/// #[derive(Events)]
-/// enum DoorEvent {
-///     Push,   // Index 0
-///     Pull,   // Index 1
-///     Lock,   // Index 2
-///     Unlock, // Index 3
-/// }
-///
-/// let event = DoorEvent::Lock;
-/// assert_eq!(event.index(), 2);
-///
-/// let reconstructed = DoorEvent::from_index(2);
-/// assert_eq!(reconstructed.index(), event.index());
-/// ```
-///
-/// # Panics
-///
-/// The derive macro will panic at compile time if:
-/// - Applied to a struct or union (not an enum)
-/// - Any variant has fields (only unit variants are allowed)
-///
-/// The generated `from_index` method will panic at runtime if called with an invalid index.
-#[proc_macro_derive(Events)]
-pub fn derive_events(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let name = &input.ident;
-
-    let variants = match &input.data {
-        Data::Enum(data_enum) => &data_enum.variants,
-        _ => panic!("Events can only be derived for enums"),
-    };
-
-    // Check that all variants are unit variants (no fields)
-    for variant in variants {
-        if !matches!(variant.fields, Fields::Unit) {
-            panic!("Events can only be derived for enums with unit variants (no fields)");
+impl Kind {
+    fn path(self) -> TokenStream2 {
+        match self {
+            Kind::States => quote!(::tinystate::States),
+            Kind::Events => quote!(::tinystate::Events),
         }
     }
-
-    let variant_names: Vec<_> = variants.iter().map(|v| &v.ident).collect();
-
-    // Generate match arms for index()
-    let index_arms = variant_names.iter().enumerate().map(|(i, variant)| {
-        quote! {
-            #name::#variant => #i,
+    fn what(self) -> &'static str {
+        match self {
+            Kind::States => "States",
+            Kind::Events => "Events",
         }
-    });
+    }
+}
 
-    // Generate match arms for from_index()
-    let from_index_arms = variant_names.iter().enumerate().map(|(i, variant)| {
-        quote! {
-            #i => #name::#variant,
-        }
-    });
+#[proc_macro_derive(States, attributes(tinystate))]
+pub fn derive_states(input: TokenStream) -> TokenStream {
+    run(parse_macro_input!(input as DeriveInput), Kind::States)
+}
 
-    let expanded = quote! {
-        impl Events for #name {
-            fn index(&self) -> usize {
-                match self {
-                    #(#index_arms)*
-                }
-            }
+#[proc_macro_derive(Events, attributes(tinystate))]
+pub fn derive_events(input: TokenStream) -> TokenStream {
+    run(parse_macro_input!(input as DeriveInput), Kind::Events)
+}
 
-            fn from_index(index: usize) -> Self {
-                match index {
-                    #(#from_index_arms)*
-                    _ => panic!("Invalid index {} for {}", index, stringify!(#name)),
-                }
-            }
-        }
+fn run(input: DeriveInput, kind: Kind) -> TokenStream {
+    expand(input, kind)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
 
-        impl Copy for #name {}
+fn expand(input: DeriveInput, kind: Kind) -> Result<TokenStream2> {
+    let name = &input.ident;
+    let vis = &input.vis;
 
-        impl Clone for #name {
-            fn clone(&self) -> Self {
-                *self
-            }
-        }
+    let Data::Enum(data) = &input.data else {
+        return Err(syn::Error::new_spanned(
+            name,
+            format!("#[derive({})] only supports enums", kind.what()),
+        ));
     };
+    if data.variants.is_empty() {
+        return Err(syn::Error::new_spanned(
+            name,
+            format!("#[derive({})] requires at least one variant", kind.what()),
+        ));
+    }
 
-    TokenStream::from(expanded)
+    let tag =
+        tag_override(&input)?.unwrap_or_else(|| Ident::new(&format!("{name}Tag"), name.span()));
+
+    let count = data.variants.len();
+    let idents: Vec<&Ident> = data.variants.iter().map(|v| &v.ident).collect();
+    let names: Vec<String> = idents.iter().map(|i| i.to_string()).collect();
+    let indices: Vec<usize> = (0..count).collect();
+
+    let to_tag = data.variants.iter().map(|v| {
+        let id = &v.ident;
+        let pat = match &v.fields {
+            Fields::Unit => quote!(Self::#id),
+            Fields::Unnamed(..) => quote!(Self::#id(..)),
+            Fields::Named(..) => quote!(Self::#id { .. }),
+        };
+        quote!(#pat => #tag::#id)
+    });
+
+    let trait_path = kind.path();
+    let (ig, tg, wc) = input.generics.split_for_impl();
+
+    let mut ref_generics = input.generics.clone();
+    ref_generics.params.insert(0, parse_quote!('__ts));
+    let (rig, ..) = ref_generics.split_for_impl();
+
+    Ok(quote! {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        #vis enum #tag { #(#idents),* }
+
+        impl #tag {
+            #vis const ALL: [#tag; #count] = [#(#tag::#idents),*];
+            #vis const fn name(self) -> &'static str {
+                match self { #(#tag::#idents => #names),* }
+            }
+            #vis const fn index(self) -> usize {
+                match self { #(#tag::#idents => #indices),* }
+            }
+        }
+
+        impl #ig #trait_path for #name #tg #wc {
+            type Tag = #tag;
+            const COUNT: usize = #count;
+            const NAMES: &'static [&'static str] = &[#(#names),*];
+            const TAGS: &'static [#tag] = &#tag::ALL;
+
+            fn tag(&self) -> #tag { match self { #(#to_tag),* } }
+            fn tag_index(tag: #tag) -> usize { tag.index() }
+        }
+
+        impl #ig ::core::convert::From<#name #tg> for #tag #wc {
+            fn from(v: #name #tg) -> Self { <#name #tg as #trait_path>::tag(&v) }
+        }
+
+        impl #rig ::core::convert::From<&'__ts #name #tg> for #tag #wc {
+            fn from(v: &'__ts #name #tg) -> Self { <#name #tg as #trait_path>::tag(v) }
+        }
+    })
+}
+
+fn tag_override(input: &DeriveInput) -> Result<Option<Ident>> {
+    let mut found = None;
+    for attr in input
+        .attrs
+        .iter()
+        .filter(|a| a.path().is_ident("tinystate"))
+    {
+        attr.parse_nested_meta(|meta| {
+            if meta.path.is_ident("tag") {
+                found = Some(meta.value()?.parse::<Ident>()?);
+                Ok(())
+            } else {
+                Err(meta.error("unknown attribute; expected `tag = Ident`"))
+            }
+        })?;
+    }
+    Ok(found)
 }

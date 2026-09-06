@@ -1,20 +1,17 @@
 [package]
 name = "tinystate-derive"
-version = "0.1.0"
-edition = "2024"
-authors = ["Saverio Scagnoli <svscagn@gmail.com>"]
-description = "Derive macros for tinystate finite state machine"
-documentation = "https://docs.rs/tinystate-derive"
-repository = "https://github.com/saverioscagnoli/tinystate"
-homepage = "https://github.com/saverioscagnoli/tinystate"
-license = "MIT"
-readme = "../README.md"
+description = "Derive macros for tinystate"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
 keywords = ["dfa", "fsm", "automata", "state-machine", "derive"]
+
+[dependencies]
+proc-macro2 = "1.0.107"
+quote = "1.0.47"
+syn = "3.0.5"
 
 [lib]
 proc-macro = true
-
-[dependencies]
-syn = { version = "2.0", features = ["full"] }
-quote = "1.0"
-proc-macro2 = "1.0"
