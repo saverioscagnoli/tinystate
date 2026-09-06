@@ -5,7 +5,9 @@ mod err;
 mod traits;
 mod transition;
 
+#[cfg(feature = "derive")]
 pub use tinystate_derive::Events;
+#[cfg(feature = "derive")]
 pub use tinystate_derive::States;
 
 pub use crate::err::BuildError;

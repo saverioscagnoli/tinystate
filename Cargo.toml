@@ -16,7 +16,7 @@ exclude.workspace = true
 members = ["derive"]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 authors = ["Saverio Scagnoli <svscagn@gmail.com>"]
 description = "Fast and tiny finite state machine"
@@ -28,4 +28,11 @@ readme = "README.md"
 exclude = [".gitignore", "assets", "CHANGELOG.md"]
 
 [dependencies]
-tinystate-derive = { path = "derive", version = "1.0.0" }
+tinystate-derive = { path = "derive", version = "1.1.0", optional = true }
+
+[dev-dependencies]
+tinystate = { path = ".", features = ["derive"] }
+
+[features]
+default = []
+derive = ["dep:tinystate-derive"]
